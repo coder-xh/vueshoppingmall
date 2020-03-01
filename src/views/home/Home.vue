@@ -3,18 +3,27 @@
     <nav-bar class="home-nav">
       <div slot="center">购物街</div>
     </nav-bar>
+    <!-- 吸顶效果替换用 -->
+    <tab-control
+      :title="['流行', '新款', '精选']"
+      @tabcontrolClick="tabClick"
+      ref="tabcontrol2"
+      v-show="showTab"
+    ></tab-control>
     <scroll
       class="swrapper-content"
       ref="scroll"
       @scrollevent="solveScroll"
       @loadMore="loadMore"
     >
-      <home-swiper :banners="banners"></home-swiper>
+      <home-swiper :banners="banners" @swiperload="swiperload"></home-swiper>
       <recommend-view :recommend="recommend"></recommend-view>
       <feature-view></feature-view>
       <tab-control
         :title="['流行', '新款', '精选']"
         @tabcontrolClick="tabClick"
+        ref="tabcontrol1"
+        v-show="!showTab"
       ></tab-control>
       <goods-list :goods="goods[currentType].list"></goods-list>
     </scroll>
@@ -46,7 +55,10 @@ export default {
         sell: { page: 0, list: [] }
       },
       currentType: "pop",
-      isshow: false
+      isshow: false,
+      currentOffsettop: null,
+      showTab: false,
+      scrollY:0,
     };
   },
   created() {
@@ -56,6 +68,19 @@ export default {
       this.recommend = res.data.recommend.list;
     });
     this.getHomeDataAsync(this.currentType);
+  },
+  mounted() {
+    const refresh = this.debounce(this.$refs.scroll.refresh, 200);
+    this.$bus.$on("itemImgLoad", () => {
+      refresh();
+    });
+  },
+  activated(){
+    this.$refs.scroll.scroll.refresh()
+    this.$refs.scroll.scroll.scrollTo(0,this.scrollY,0)
+  },
+  deactivated(){
+    this.scrollY = this.$refs.scroll.scroll.y
   },
   components: {
     NavBar,
@@ -69,6 +94,19 @@ export default {
     BackTop
   },
   methods: {
+    // 防抖函数
+    debounce(func, delay) {
+      let timer = null;
+      return function(...args) {
+        if (timer) {
+          clearTimeout(timer);
+        }
+        timer = setTimeout(() => {
+          func.apply(this, args);
+        }, delay);
+      };
+    },
+
     // 获取商品列表
     getHomeDataAsync(type) {
       const page = this.goods[type].page + 1;
@@ -80,7 +118,7 @@ export default {
         this.goods[type].page += 1;
 
         // 初始化下拉加载更多
-        this.$refs.scroll.scroll.finishPullUp()
+        this.$refs.scroll.scroll.finishPullUp();
       });
     },
 
@@ -98,6 +136,8 @@ export default {
           break;
       }
       this.getHomeDataAsync(this.currentType);
+      this.$refs.tabcontrol1.currentIndex = index
+      this.$refs.tabcontrol2.currentIndex = index
     },
 
     // 点击回到顶部
@@ -105,14 +145,22 @@ export default {
       this.$refs.scroll.scroll.scrollTo(0, 0, 500);
     },
 
-    // 根据滚动决定返回顶部的显隐
+    // 监听滚动事件
     solveScroll(position) {
-      this.isshow = (-position.y) >1000
+      // 根据滚动决定返回顶部的显隐
+      this.isshow = -position.y > 1000;
+
+      // 根据滚动位置完成tab吸顶效果
+      this.showTab = -position.y >this.currentOffsettop
     },
 
     // 加载更多
-    loadMore(){
-      this.getHomeDataAsync(this.currentType)
+    loadMore() {
+      this.getHomeDataAsync(this.currentType);
+    },
+
+    swiperload() {
+      this.currentOffsettop = this.$refs.tabcontrol1.$el.offsetTop;
     }
   }
 };
@@ -131,8 +179,6 @@ export default {
 }
 
 .tabcontrol {
-  position: sticky;
-  top: 44px;
   background-color: #fff;
   z-index: 9;
 }

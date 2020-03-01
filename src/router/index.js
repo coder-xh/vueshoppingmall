@@ -31,6 +31,10 @@ const routes = [
   {
     path: "/cart",
     component: () => import("views/cart/Cart")
+  },
+  {
+    path: "/detail/:iid",
+    component: () => import("views/detail/detail")
   }
 ];
 

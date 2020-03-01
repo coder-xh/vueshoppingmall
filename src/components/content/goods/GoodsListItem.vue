@@ -1,6 +1,6 @@
 <template>
-  <div class="goodsItem">
-    <img :src="goodsItem.show.img" alt="" />
+  <div class="goodsItem" @click="showDetail(goodsItem.iid)">
+    <img :src="goodsItem.show.img" alt="" @load="imgLoad" />
     <div class="goodsInfo">
       <p class="goodsTitle">{{ goodsItem.title }}</p>
 
@@ -14,9 +14,19 @@
 <script>
 export default {
   props: {
-    goodsItem: Object,
-    default() {
-      return {};
+    goodsItem: {
+      type: Object,
+      default() {
+        return {};
+      }
+    }
+  },
+  methods: {
+    imgLoad() {
+      this.$bus.$emit("itemImgLoad");
+    },
+    showDetail(iid) {
+      this.$router.push("/detail/" + iid);
     }
   }
 };
@@ -40,8 +50,8 @@ export default {
   text-overflow: ellipsis;
 }
 
-.goodsInfo{
-  text-align: center
+.goodsInfo {
+  text-align: center;
 }
 
 .goodsInfo img {
@@ -49,11 +59,11 @@ export default {
   height: 40px;
 }
 
-.goodsInfo .price{
-  margin-right: 20px
+.goodsInfo .price {
+  margin-right: 20px;
 }
 
-.goodsInfo .collect{
+.goodsInfo .collect {
   position: relative;
 }
 
