@@ -48,13 +48,24 @@
         <button>进店逛逛</button>
       </div>
     </div>
+    <div class="detail-info">
+      <div v-for="(item, index) in detailInfo.detailImage" :key="index">
+        <div class="text">{{ item.key }}</div>
+        <div v-for="(citem, index) in item.list" :key="index">
+          <img :src="'http:' + citem" alt="" @load="imgLoad"/>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   data() {
-    return {};
+    return {
+      imgInfo: [],
+      title: ""
+    };
   },
   props: {
     goodInfo: {
@@ -80,7 +91,18 @@ export default {
       default() {
         return {};
       }
+    },
+    detailInfo: {
+      type: Object,
+      default() {
+        return {};
+      }
     }
+  },
+  methods: {
+    imgLoad() {
+      this.$emit("imgLoad");
+    },
   }
 };
 </script>
@@ -189,5 +211,12 @@ export default {
   background-color: #eee;
   color: #666;
   border-radius: 5px;
+}
+.detail-info .text {
+  padding: 10px;
+}
+.detail-info img {
+  width: 100%;
+  height: auto;
 }
 </style>

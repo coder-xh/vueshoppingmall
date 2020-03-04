@@ -1,10 +1,10 @@
 <template>
   <div class="goodsItem" @click="showDetail(goodsItem.iid)">
-    <img :src="goodsItem.show.img" alt="" @load="imgLoad" />
+    <img :src="showImg" alt="" @load="imgLoad" />
     <div class="goodsInfo">
       <p class="goodsTitle">{{ goodsItem.title }}</p>
 
-      <span class="price">{{ goodsItem.orgPrice }}</span>
+      <span class="price">{{ goodsItem.price }}</span>
 
       <span class="collect">{{ goodsItem.cfav }}</span>
     </div>
@@ -21,8 +21,13 @@ export default {
       }
     }
   },
+  computed: {
+    showImg() {
+      return this.goodsItem.image || this.goodsItem.show.img;
+    }
+  },
   methods: {
-    imgLoad() {
+    imgLoad() { 
       this.$bus.$emit("itemImgLoad");
     },
     showDetail(iid) {
@@ -32,7 +37,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .goodsItem {
   padding-bottom: 40px;
   position: relative;
