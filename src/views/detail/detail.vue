@@ -5,11 +5,15 @@
         <img src="~assets/img/common/back.svg" alt="" />
       </div>
       <div slot="center">
-        <tab-control :title="['商品', '参数', '评论', '精选']"></tab-control>
+        <tab-control
+          :title="['商品', '参数', '评论', '推荐']"
+          @tabcontrolClick="tabClick"
+          ref="tabcon"
+        ></tab-control>
       </div>
     </nav-bar>
-    <scroll class="content" ref="scroll">
-      <swiper class="detail-swiper">
+    <scroll class="content" ref="scroll" @scrollevent="handleScroll">
+      <swiper class="detail-swiper" ref="goods">
         <swiper-item v-for="(item, index) in swiperImg" :key="index">
           <img :src="item" alt="" />
         </swiper-item>
@@ -24,10 +28,12 @@
         @imgLoad="imgLoad"
       >
       </item-info>
-      <param-info :paInfo = paInfo></param-info>
-      <comment-info :commentInfo = commentInfo></comment-info>
-      <recommend :recommendInfo = recommendInfo></recommend>
+      <param-info :paInfo="paInfo" ref="params"></param-info>
+      <comment-info :commentInfo="commentInfo" ref="comment"></comment-info>
+      <recommend :recommendInfo="recommendInfo" ref="recommend"></recommend>
     </scroll>
+    <bottom-tab @addToCart= "addToCart"></bottom-tab>
+    <back-top @click.native="BackTopClick" v-show="isshow"></back-top>
   </div>
 </template>
 
@@ -41,7 +47,13 @@ import CommentInfo from "./childcomponent/commentInfo";
 import Recommend from "./childcomponent/recommend";
 import Scroll from "components/common/scroll/Scroll";
 
+import BackTop from "components/common/backtop/BackTop";
+import BottomTab from "./childcomponent/BottomTab"
+
 import { getGoodInfo, getRecommendInfo } from "network/detail";
+import { debounce } from "network/utils";
+import {mixin} from "network/mixin"
+import {mapActions} from 'vuex'
 
 export default {
   name: "detail",
@@ -54,17 +66,30 @@ export default {
       serviceInfo: [],
       shopInfo: {},
       detailInfo: {},
-      paInfo:{},
-      commentInfo:{},
-      recommendInfo:[],
+      paInfo: {},
+      commentInfo: {},
+      recommendInfo: [],
+      offsetY: [],
+      getY: null,
+      curIndex: 0,
+      isshow: false
     };
   },
+  mixins:[mixin],
   created() {
     this.goodId = this.$route.params.iid;
     // 获取商品详情页数据
     this.getGoodInfoAsync();
     // 获取推荐商品数据
     this.getRecommendInfoAsync();
+
+    this.getY = debounce(() => {
+      this.offsetY = [];
+      this.offsetY.push(this.$refs.goods.$el.offsetTop);
+      this.offsetY.push(this.$refs.params.$el.offsetTop);
+      this.offsetY.push(this.$refs.comment.$el.offsetTop);
+      this.offsetY.push(this.$refs.recommend.$el.offsetTop);
+    }, 200);
   },
   components: {
     NavBar,
@@ -75,15 +100,20 @@ export default {
     ParamInfo,
     CommentInfo,
     Recommend,
-    Scroll
+    Scroll,
+    BackTop,
+    mixin,
+    BottomTab
   },
   mounted() {
-    const refresh = this.debounce(this.$refs.scroll.refresh, 200);
+    const refresh = debounce(this.$refs.scroll.refresh, 200);
     this.$bus.$on("itemImgLoad", () => {
       refresh();
     });
   },
   methods: {
+    ...mapActions(['addtoMyCart']),
+
     getGoodInfoAsync() {
       getGoodInfo({
         iid: this.goodId
@@ -94,35 +124,66 @@ export default {
         this.serviceInfo = res.result.shopInfo.services;
         this.shopInfo = res.result.shopInfo;
         this.detailInfo = res.result.detailInfo;
-        this.paInfo = res.result.itemParams
-        this.commentInfo = res.result.rate
+        this.paInfo = res.result.itemParams;
+        this.commentInfo = res.result.rate;
       });
     },
-    getRecommendInfoAsync(){
+    getRecommendInfoAsync() {
       getRecommendInfo().then(res => {
-        this.recommendInfo = res.data.list
-      })
+        this.recommendInfo = res.data.list;
+      });
     },
     back() {
       this.$router.back();
     },
     imgLoad() {
-      const refresh = this.debounce(this.$refs.scroll.refresh, 200);
+      const refresh = debounce(this.$refs.scroll.refresh, 200);
       refresh();
+      this.getY();
+    },
+    tabClick(index) {
+      this.$refs.scroll.scroll.scrollTo(0, -this.offsetY[index], 500);
+    },
+    handleScroll(position) {
+      this.isshow = -position.y > 1000;
+
+      let yHeight = -position.y;
+      let len = this.offsetY.length;
+      for (let i in this.offsetY) {
+        if (
+          (i != this.curIndex &&
+            i < len - 1 &&
+              yHeight >= this.offsetY[i] &&
+              yHeight < this.offsetY[parseInt(i) + 1]) ||
+          (i == len - 1 && yHeight >= this.offsetY[i])
+        ) {
+          this.curIndex = i;
+          this.$refs.tabcon.currentIndex = i;
+        }
+      }
     },
 
-    // 防抖函数
-    debounce(func, delay) {
-      let timer = null;
-      return function(...args) {
-        if (timer) {
-          clearTimeout(timer);
-        }
-        timer = setTimeout(() => {
-          func.apply(this, args);
-        }, delay);
-      };
+    addToCart(){
+      // 获取加入购物车的信息
+      const addInfo = {}
+      addInfo.iid = this.goodId
+      addInfo.img = this.goodInfo.topImages[0]
+      addInfo.title = this.goodInfo.title
+      addInfo.desc = this.goodInfo.desc
+      addInfo.price = this.goodInfo.lowNowPrice
+      addInfo.checked = false
+
+      // vuex映射为方法
+      this.addtoMyCart(addInfo).then(res => {
+        console.log(res)
+      })
+
+      // this.$store.dispatch('addtoMyCart',addInfo).then(res => {
+      //   console.log(res)
+      // })
+
     }
+
   }
 };
 </script>
@@ -152,7 +213,7 @@ export default {
   height: 300px;
 }
 .content {
-  height: 100%;
+  height: calc(100% - 49px);
   overflow: hidden;
 }
 </style>

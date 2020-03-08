@@ -25,4 +25,8 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+.goods{
+  width: 100%;
+}
+</style>

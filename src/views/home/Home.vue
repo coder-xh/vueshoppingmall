@@ -43,6 +43,7 @@ import TabControl from "components/common/tabcontrol/TabControl";
 import GoodsList from "components/content/goods/GoodsList";
 
 import { getHomeMultidata, getHomeData } from "network/home";
+import { debounce } from "network/utils";
 
 export default {
   data() {
@@ -70,7 +71,7 @@ export default {
     this.getHomeDataAsync(this.currentType);
   },
   mounted() {
-    const refresh = this.debounce(this.$refs.scroll.refresh, 200);
+    const refresh = debounce(this.$refs.scroll.refresh, 200);
     this.$bus.$on("itemImgLoad", () => {
       refresh();
     });
@@ -95,17 +96,17 @@ export default {
   },
   methods: {
     // 防抖函数
-    debounce(func, delay) {
-      let timer = null;
-      return function(...args) {
-        if (timer) {
-          clearTimeout(timer);
-        }
-        timer = setTimeout(() => {
-          func.apply(this, args);
-        }, delay);
-      };
-    },
+    // debounce(func, delay) {
+    //   let timer = null;
+    //   return function(...args) {
+    //     if (timer) {
+    //       clearTimeout(timer);
+    //     }
+    //     timer = setTimeout(() => {
+    //       func.apply(this, args);
+    //     }, delay);
+    //   };
+    // },
 
     // 获取商品列表
     getHomeDataAsync(type) {
