@@ -175,7 +175,7 @@ export default {
 
       // vuex映射为方法
       this.addtoMyCart(addInfo).then(res => {
-        console.log(res)
+        this.$toast.show(res,2000)
       })
 
       // this.$store.dispatch('addtoMyCart',addInfo).then(res => {

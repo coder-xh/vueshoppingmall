@@ -1,6 +1,7 @@
 <template>
   <div class="goodsItem" @click="showDetail(goodsItem.iid)">
-    <img :src="showImg" alt="" @load="imgLoad" />
+    <!-- 懒加载方式加载图片 -->
+    <img v-lazy="showImg" alt="" @load="imgLoad" />
     <div class="goodsInfo">
       <p class="goodsTitle">{{ goodsItem.title }}</p>
 

@@ -8,9 +8,9 @@ export default {
       if (oldProduct) {
         
         context.commit("addCount", oldProduct);
-        resolve("数量加1")
+        resolve("购物车已有该商品")
       } else {
-        resolve("加了新商品")
+        resolve("添加了新商品")
         context.commit("addCart", payload);
       }
     });
